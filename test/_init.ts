@@ -14,3 +14,5 @@ export const mochaHooks = {
   beforeAll: () => clean(),
   afterAll: () => clean(),
 };
+
+export const cacheFile = CACHE_DIR;
