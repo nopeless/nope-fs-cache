@@ -1,11 +1,13 @@
 import fsc from "./dist/index.js";
 
-const fsq = new fsc({ ttl: '1s' });
+const fsq = new fsc({ ttl: `1s` });
 
-fsq.setSync("foo", Buffer.from("bar"));
+fsq.setSync(`foo`, Buffer.from(`bar`));
 
-console.log(fsq.getSync("foo").toString());
+console.log(fsq.getSync(`foo`).toString());
 
-await new Promise(r => setTimeout(r, 2000));
+await new Promise((r) => {
+  setTimeout(r, 2000);
+});
 
-console.log(fsq.getSync("foo"));
+console.log(fsq.getSync(`foo`));
