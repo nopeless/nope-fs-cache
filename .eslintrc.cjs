@@ -43,7 +43,6 @@ module.exports = {
     ],
     "no-duplicate-imports": `error`,
     "no-promise-executor-return": `error`,
-    "no-use-before-define": [`error`, { functions: true, classes: true }],
     "require-atomic-updates": `error`,
     camelcase: [
       `warn`,
