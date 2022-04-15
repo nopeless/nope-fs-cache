@@ -137,6 +137,18 @@ class FixedTimeoutFIFOMappedQueue {
     if (this.timer) return;
     this.head && this.setNewHeadTimer();
   }
+
+  destroy() {
+    // Attempts to help gc
+    for (const node of this.entries()) {
+      node.next = null;
+      node.prev = null;
+    }
+    this.head = null;
+    this.tail = null;
+    this.stop();
+    this.entryMap.clear();
+  }
 }
 
 class Data {

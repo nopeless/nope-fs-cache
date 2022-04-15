@@ -181,6 +181,10 @@ class FileSystemCache {
     const keys = this.fq.clear();
     return Promise.all(keys.map((key) => this.#unlink(key)));
   }
+
+  destroy() {
+    this.fq.destroy();
+  }
 }
 
 export { FileSystemCache };
