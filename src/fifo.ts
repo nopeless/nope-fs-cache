@@ -51,7 +51,7 @@ class FixedTimeoutFIFOMappedQueue {
   deleteHead(emitDelete = true) {
     if (!this.head) throw new InvalidState(`Head is null`);
     this.entryMap.delete(this.head.key);
-    emitDelete && this.onDelete(this.head.key);
+    if (emitDelete) this.onDelete(this.head.key);
     if (this.head.next) {
       this.head = this.head.next;
       if (!this.head.prev) throw new InvalidState(`Head.prev is null`);
@@ -62,7 +62,7 @@ class FixedTimeoutFIFOMappedQueue {
     }
     this.head = null;
     this.tail = null;
-    this.timer && clearTimeout(this.timer);
+    if (this.timer) clearTimeout(this.timer);
     this.timer = null;
     return false;
   }
@@ -70,7 +70,7 @@ class FixedTimeoutFIFOMappedQueue {
   setNewHeadTimer() {
     if (!this.head) throw new InvalidState(`Head is null`);
     this.timer = setTimeout(() => {
-      this.deleteHead(true) && this.setNewHeadTimer();
+      if (this.deleteHead(true)) this.setNewHeadTimer();
     }, this.head.ttlTimestamp - Date.now()).unref();
   }
 
@@ -84,7 +84,7 @@ class FixedTimeoutFIFOMappedQueue {
     }
 
     this.entryMap.delete(key);
-    emitDelete && this.onDelete(key);
+    if (emitDelete) this.onDelete(key);
 
     if (entry === this.tail) {
       if (!emitDelete) {
@@ -120,7 +120,7 @@ class FixedTimeoutFIFOMappedQueue {
     this.entryMap.clear();
     this.head = null;
     this.tail = null;
-    this.timer && clearTimeout(this.timer);
+    if (this.timer) clearTimeout(this.timer);
     this.timer = null;
     for (const key of keys) {
       this.onDelete(key);
@@ -129,13 +129,13 @@ class FixedTimeoutFIFOMappedQueue {
   }
 
   stop() {
-    this.timer && clearTimeout(this.timer);
+    if (this.timer) clearTimeout(this.timer);
     this.timer = null;
   }
 
   start() {
     if (this.timer) return;
-    this.head && this.setNewHeadTimer();
+    if (this.head) this.setNewHeadTimer();
   }
 
   destroy() {
