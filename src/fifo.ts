@@ -127,6 +127,16 @@ class FixedTimeoutFIFOMappedQueue {
     }
     return keys;
   }
+
+  stop() {
+    this.timer && clearTimeout(this.timer);
+    this.timer = null;
+  }
+
+  start() {
+    if (this.timer) return;
+    this.head && this.setNewHeadTimer();
+  }
 }
 
 class Data {
