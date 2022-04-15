@@ -1,5 +1,3 @@
-
-import {EventEmitter} from "events";
 import path from "path";
 import fs from "fs";
 const fsp = fs.promises;
@@ -9,10 +7,10 @@ import ms from "ms";
 
 import { FixedTimeoutFIFOMappedQueue } from "./fifo.js";
 
-type Entries = { filename: string, atime: number }[];
+type Entries = { filename: string; atime: number }[];
 
 function sha256(str: string) {
-  return createHash("sha256").update(str).digest("hex");
+  return createHash(`sha256`).update(str).digest(`hex`);
 }
 
 function atime(f: string) {
@@ -24,27 +22,33 @@ class FileSystemCache {
   public cachePath: string;
   public fq: FixedTimeoutFIFOMappedQueue;
   public error: typeof console.log;
+  public generator: ((key: string) => Buffer) | null;
+  public generatorAsync: ((key: string) => Promise<Buffer> | Buffer) | null;
 
   /**
    * If skipInit is true, you must initialize the cache via #initAsync()
    */
   constructor(options?: {
-    basePath: "./cache",
-    ttl: number | `30d`,
-    ignoreTTLWarning: false,
-    skipInit: false,
-    error: typeof console.log,
+    basePath: `./cache`;
+    ttl: number | `30d`;
+    ignoreTTLWarning: false;
+    skipInit: false;
+    generator: InstanceType<typeof FileSystemCache>[`generator`];
+    generatorAsync: InstanceType<typeof FileSystemCache>[`generatorAsync`];
+    error: typeof console.log;
   }) {
     options = {
-      basePath: "./cache",
+      basePath: `./cache`,
       ttl: `30d`,
       ignoreTTLWarning: false,
       skipInit: false,
       error: console.log,
-      ...options
-    }
+      generator: null,
+      generatorAsync: null,
+      ...options,
+    };
 
-    if (typeof options.ttl === 'string') {
+    if (typeof options.ttl === `string`) {
       this.ttl = ms(options.ttl) as number;
     } else {
       this.ttl = options.ttl;
@@ -61,10 +65,16 @@ class FileSystemCache {
       this.cachePath = path.join(process.cwd(), options.basePath);
     }
 
+    if (this.cachePath.length + 64 + 1 > 260) {
+      throw new Error(`cachePath is too long`);
+    }
+
     this.error = options.error;
 
-    this.fq = new FixedTimeoutFIFOMappedQueue(this.ttl, key => {
-      this.#unlink(key).catch(e => {
+    this.generator = options.generator;
+
+    this.fq = new FixedTimeoutFIFOMappedQueue(this.ttl, (key) => {
+      this.#unlink(key).catch((e) => {
         this.error(e);
       });
     });
@@ -75,7 +85,10 @@ class FileSystemCache {
 
       const entries: Entries = [];
       for (const filename of fs.readdirSync(this.cachePath)) {
-        entries.push({ filename, atime: atime(path.resolve(this.cachePath, filename))});
+        entries.push({
+          filename,
+          atime: atime(path.resolve(this.cachePath, filename)),
+        });
       }
       entries.sort((a, b) => b.atime - a.atime);
 
@@ -92,7 +105,7 @@ class FileSystemCache {
     try {
       dir = await fsp.readdir(this.cachePath);
     } catch (e) {
-      if (e.code === 'ENOENT') {
+      if (e.code === `ENOENT`) {
         await fsp.mkdir(this.cachePath);
       } else {
         throw e;
@@ -100,7 +113,10 @@ class FileSystemCache {
     }
 
     for (const filename of dir) {
-      entries.push({filename, atime: atime(path.resolve(this.cachePath, filename))});
+      entries.push({
+        filename,
+        atime: atime(path.resolve(this.cachePath, filename)),
+      });
     }
     entries.sort((a, b) => b.atime - a.atime);
 
@@ -113,7 +129,6 @@ class FileSystemCache {
     return fsp.unlink(path.join(this.cachePath, key));
   }
 
-
   remove(key: string) {
     this.fq.delete(sha256(key));
   }
@@ -122,10 +137,12 @@ class FileSystemCache {
     const hash = sha256(key);
     this.fq.append(hash);
     try {
-      return fs.readFileSync( path.join(this.cachePath, hash));
+      return fs.readFileSync(path.join(this.cachePath, hash));
     } catch (e) {
-      if (e.code === 'ENOENT') {
-        return null;
+      if (e.code === `ENOENT`) {
+        return typeof this.generator === `function`
+          ? this.generator(key)
+          : null;
       }
       throw e;
     }
@@ -137,8 +154,10 @@ class FileSystemCache {
     try {
       return await fsp.readFile(path.join(this.cachePath, hash));
     } catch (e) {
-      if (e.code === 'ENOENT') {
-        return null;
+      if (e.code === `ENOENT`) {
+        return typeof this.generatorAsync === `function`
+          ? this.generatorAsync(key)
+          : null;
       }
       throw e;
     }
@@ -158,7 +177,7 @@ class FileSystemCache {
 
   async clear() {
     const keys = this.fq.clear();
-    return Promise.all(keys.map(key => this.#unlink(key)));
+    return Promise.all(keys.map((key) => this.#unlink(key)));
   }
 }
 

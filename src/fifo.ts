@@ -1,3 +1,4 @@
+/* eslint-disable no-use-before-define */
 
 type Key = string;
 
@@ -13,13 +14,18 @@ class FixedTimeoutFIFOMappedQueue {
   public timer: ReturnType<typeof setTimeout> | null;
   public entryMap: Map<Key, Data>;
 
-  constructor(public ttl: number, public onDelete: (key: string) => void = () => { }){
+  constructor(
+    public ttl: number,
+    public onDelete: (_: string) => void = () => {
+      return;
+    }
+  ) {
     this.ttl = ttl;
     this.onDelete = onDelete;
 
-    this.head = null
+    this.head = null;
     this.tail = null;
-  
+
     this.timer = null;
     this.entryMap = new Map();
   }
@@ -28,7 +34,7 @@ class FixedTimeoutFIFOMappedQueue {
     this.delete(key, false);
     const entry = new Data(key, timestamp || Date.now() + this.ttl);
     this.entryMap.set(key, entry);
-    
+
     if (!this.head) {
       this.head = this.tail = entry;
       this.setNewHeadTimer();
@@ -50,7 +56,7 @@ class FixedTimeoutFIFOMappedQueue {
       this.head = this.head.next;
       if (!this.head.prev) throw new InvalidState(`Head.prev is null`);
       this.head.prev.next = null;
-      
+
       this.head.prev = null;
       return true;
     }
@@ -90,7 +96,7 @@ class FixedTimeoutFIFOMappedQueue {
     entry.prev.next = entry.next;
     if (!entry.next) throw new InvalidState(`Entry.next is null`);
     entry.next.prev = entry.prev;
-    entry.next = null
+    entry.next = null;
     entry.prev = null;
     return true;
   }
@@ -104,7 +110,7 @@ class FixedTimeoutFIFOMappedQueue {
   }
 
   clear(): string[] {
-    const keys = [...this.entryMap.values()].map(entry => entry.key);
+    const keys = [...this.entryMap.values()].map((entry) => entry.key);
     this.entryMap.clear();
     this.head = null;
     this.tail = null;
@@ -128,8 +134,10 @@ class Data {
   }
 
   toString() {
-    return `[${this.key} prev=${this.prev && this.prev.key} next=${this.next && this.next.key}]`;
+    return `[${this.key} prev=${this.prev && this.prev.key} next=${
+      this.next && this.next.key
+    }]`;
   }
 }
 
-export { FixedTimeoutFIFOMappedQueue }
+export { FixedTimeoutFIFOMappedQueue };
