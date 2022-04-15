@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "test": "mocha --no-warnings",
+    "test": "mocha",
     "test:coverage": "c8 npm run test",
     "lint": "eslint .",
     "prepublish": "npm run lint && tsc"
