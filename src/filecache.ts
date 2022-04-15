@@ -41,7 +41,7 @@ class FileSystemCache {
   constructor(options?: Options) {
     const opts: Required<Options> = {
       basePath: `./cache`,
-      ttl: `30d`,
+      ttl: `1d`,
       ignoreTTLWarning: false,
       skipInit: false,
       error: console.log,
@@ -59,6 +59,13 @@ class FileSystemCache {
     if (!opts.ignoreTTLWarning && this.ttl % 1000) {
       // Does not end with 000
       throw new Error(`ttl must be in second unit`);
+    }
+
+    // Max 32 bit signed int
+    if (this.ttl > 2147483647) {
+      throw new Error(
+        `ttl must be less than 2147483647 (or aproximately 24.8 days)`
+      );
     }
 
     if (path.isAbsolute(opts.basePath)) {
@@ -188,3 +195,4 @@ class FileSystemCache {
 }
 
 export { FileSystemCache };
+export type { Options };
