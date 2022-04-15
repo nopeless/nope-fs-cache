@@ -17,6 +17,16 @@ function atime(f: string) {
   return fs.statSync(f).atimeMs;
 }
 
+type Options = {
+  basePath?: `./cache`;
+  ttl?: number | `30d`;
+  ignoreTTLWarning?: false;
+  skipInit?: false;
+  generator?: InstanceType<typeof FileSystemCache>[`generator`];
+  generatorAsync?: InstanceType<typeof FileSystemCache>[`generatorAsync`];
+  error?: typeof console.log;
+};
+
 class FileSystemCache {
   public ttl: number;
   public cachePath: string;
@@ -28,16 +38,8 @@ class FileSystemCache {
   /**
    * If skipInit is true, you must initialize the cache via #initAsync()
    */
-  constructor(options?: {
-    basePath: `./cache`;
-    ttl: number | `30d`;
-    ignoreTTLWarning: false;
-    skipInit: false;
-    generator: InstanceType<typeof FileSystemCache>[`generator`];
-    generatorAsync: InstanceType<typeof FileSystemCache>[`generatorAsync`];
-    error: typeof console.log;
-  }) {
-    options = {
+  constructor(options?: Options) {
+    const opts: Required<Options> = {
       basePath: `./cache`,
       ttl: `30d`,
       ignoreTTLWarning: false,
@@ -48,30 +50,30 @@ class FileSystemCache {
       ...options,
     };
 
-    if (typeof options.ttl === `string`) {
-      this.ttl = ms(options.ttl) as number;
+    if (typeof opts.ttl === `string`) {
+      this.ttl = ms(opts.ttl);
     } else {
-      this.ttl = options.ttl;
+      this.ttl = opts.ttl;
     }
 
-    if (!options.ignoreTTLWarning && this.ttl % 1000) {
+    if (!opts.ignoreTTLWarning && this.ttl % 1000) {
       // Does not end with 000
       throw new Error(`ttl must be in second unit`);
     }
 
-    if (path.isAbsolute(options.basePath)) {
-      this.cachePath = options.basePath;
+    if (path.isAbsolute(opts.basePath)) {
+      this.cachePath = opts.basePath;
     } else {
-      this.cachePath = path.join(process.cwd(), options.basePath);
+      this.cachePath = path.join(process.cwd(), opts.basePath);
     }
 
     if (this.cachePath.length + 64 + 1 > 260) {
       throw new Error(`cachePath is too long`);
     }
 
-    this.error = options.error;
+    this.error = opts.error;
 
-    this.generator = options.generator;
+    this.generator = opts.generator;
 
     this.fq = new FixedTimeoutFIFOMappedQueue(this.ttl, (key) => {
       this.#unlink(key).catch((e) => {
@@ -79,7 +81,7 @@ class FileSystemCache {
       });
     });
 
-    if (!options.skipInit) {
+    if (!opts.skipInit) {
       // Synchronously initialize
       fs.existsSync(this.cachePath) || fs.mkdirSync(this.cachePath);
 
