@@ -76,20 +76,26 @@ class FixedTimeoutFIFOMappedQueue {
 
   delete(key, emitDelete = true) {
     const entry = this.entryMap.get(key);
-    if (!entry) return false;
+    if (!entry) return;
 
     if (entry === this.head) {
-      return this.deleteHead(emitDelete);
+      this.deleteHead(emitDelete);
+      return;
     }
 
     this.entryMap.delete(key);
     emitDelete && this.onDelete(key);
 
     if (entry === this.tail) {
+      if (!emitDelete) {
+        // Just a moving process
+        entry.ttlTimestamp = Date.now() + this.ttl;
+        return;
+      }
       this.tail = entry.prev;
       if (!this.tail) throw new InvalidState(`Tail.prev is null`);
       this.tail.next = null;
-      return true;
+      return;
     }
 
     if (!entry.prev) throw new InvalidState(`Entry.prev is null`);
@@ -98,7 +104,7 @@ class FixedTimeoutFIFOMappedQueue {
     entry.next.prev = entry.prev;
     entry.next = null;
     entry.prev = null;
-    return true;
+    return;
   }
 
   *entries() {
