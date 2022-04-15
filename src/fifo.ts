@@ -149,6 +149,12 @@ class FixedTimeoutFIFOMappedQueue {
     this.stop();
     this.entryMap.clear();
   }
+
+  debug() {
+    console.log(
+      [...this.entries()].map((entry) => entry.toString()).join(`->`)
+    );
+  }
 }
 
 class Data {
