@@ -7,6 +7,7 @@
   "scripts": {
     "test": "mocha",
     "test:coverage": "c8 npm run test",
+    "test:html": "c8 --reporter=html npm run test && echo 'Opening index.html...' && (start coverage/index.html || echo 'could not open coverage/index.html')",
     "lint": "eslint .",
     "prepublish": "npm run lint && tsc"
   },
