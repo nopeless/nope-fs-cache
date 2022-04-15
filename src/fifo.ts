@@ -48,6 +48,9 @@ class FixedTimeoutFIFOMappedQueue {
     this.tail = entry;
   }
 
+  /**
+   * Return true if there are remaining items
+   */
   deleteHead(emitDelete = true) {
     if (!this.head) throw new InvalidState(`Head is null`);
     this.entryMap.delete(this.head.key);
