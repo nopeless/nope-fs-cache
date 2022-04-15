@@ -21,7 +21,6 @@ module.exports = {
     "no-console": `off`,
     "func-names": `off`,
     "no-underscore-dangle": `off`,
-    "consistent-return": [`error`, { treatUndefinedAsUnspecified: true }],
     "jest/expect-expect": `off`,
     "security/detect-object-injection": `off`,
     "import-quotes/import-quotes": [`error`, `double`],
