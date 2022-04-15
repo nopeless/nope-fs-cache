@@ -13,7 +13,9 @@ let str = fc.getSync(`foo`).toString();
 
 console.log(str);
 
-await new Promise((r) => setTimeout(r, 10000));
+await new Promise((r) => {
+  setTimeout(r, 10000);
+});
 
 // Should be null now
 str = fc.getSync(`foo`);
