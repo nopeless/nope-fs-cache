@@ -18,10 +18,10 @@ function atime(f: string) {
 }
 
 type Options = {
-  basePath?: `./cache`;
-  ttl?: number | `30d`;
-  ignoreTTLWarning?: false;
-  skipInit?: false;
+  basePath?: string;
+  ttl?: number | string;
+  ignoreTTLWarning?: boolean;
+  skipInit?: boolean;
   generator?: InstanceType<typeof FileSystemCache>[`generator`];
   generatorAsync?: InstanceType<typeof FileSystemCache>[`generatorAsync`];
   error?: typeof console.log;
