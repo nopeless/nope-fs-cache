@@ -12,7 +12,22 @@ function clean() {
 
 export const mochaHooks = {
   beforeAll: () => clean(),
-  afterAll: () => clean(),
+  afterAll: function () {
+    let topParent = this.test;
+    while (topParent.parent) topParent = topParent.parent;
+    function isFailed(suite) {
+      // Suites are recursive
+      for (const s of suite.suites) {
+        if (isFailed(s)) return true;
+      }
+      // Tests are not
+      for (const test of suite.tests) {
+        if (test.state === `failed`) return true;
+      }
+      return false;
+    }
+    isFailed(topParent) || clean();
+  },
 };
 
 export const cacheFile = CACHE_DIR;
