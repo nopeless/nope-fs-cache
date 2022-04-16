@@ -106,7 +106,7 @@ class FileSystemCacheBase {
       const entries: Entries = [];
       for (const filename of fs.readdirSync(this.cachePath)) {
         if (filename.length !== 64) {
-          console.warn(`Invalid filename: ${filename} in ${this.cachePath}`);
+          this.warn(`Invalid filename: ${filename} in ${this.cachePath}`);
           continue;
         }
         entries.push({
