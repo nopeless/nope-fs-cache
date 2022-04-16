@@ -18,35 +18,43 @@ function atime(f: string) {
 }
 
 type Options = {
-  basePath?: string;
-  ttl?: number | string;
-  ignoreTTLWarning?: boolean;
-  skipInit?: boolean;
-  generator?: InstanceType<typeof FileSystemCache>[`generator`];
-  generatorAsync?: InstanceType<typeof FileSystemCache>[`generatorAsync`];
+  readonly basePath?: string;
+  readonly ttl?: number | string;
+  readonly ignoreTTLWarning?: boolean;
+  readonly skipInit?: boolean;
   error?: typeof console.log;
 };
 
-class FileSystemCache {
-  public ttl: number;
-  public cachePath: string;
-  public fq: FixedTimeoutFIFOMappedQueue;
+type OptionsDelux<T> = {
+  readonly generatorSync: (key: string) => T;
+  readonly toBufferSync: (value: T) => Buffer;
+  readonly transformSync: (buff: Buffer) => T;
+
+  generator: (key: string) => Promise<T> | T;
+  toBuffer: (value: T) => Promise<Buffer> | Buffer;
+  transform: (buff: Buffer) => Promise<T> | T;
+};
+
+const defaultOptions: Required<Options> = {
+  basePath: `./cache`,
+  ttl: `1d`,
+  ignoreTTLWarning: false,
+  skipInit: false,
+  error: console.log,
+};
+
+class FileSystemCacheBase {
+  public readonly ttl: number;
+  public readonly cachePath: string;
+  public readonly fq: FixedTimeoutFIFOMappedQueue;
   public error: typeof console.log;
-  public generator: ((key: string) => Buffer) | null;
-  public generatorAsync: ((key: string) => Promise<Buffer> | Buffer) | null;
 
   /**
    * If skipInit is true, you must initialize the cache via #initAsync()
    */
   constructor(options?: Options) {
     const opts: Required<Options> = {
-      basePath: `./cache`,
-      ttl: `1d`,
-      ignoreTTLWarning: false,
-      skipInit: false,
-      error: console.log,
-      generator: null,
-      generatorAsync: null,
+      ...defaultOptions,
       ...options,
     };
 
@@ -79,8 +87,6 @@ class FileSystemCache {
     }
 
     this.error = opts.error;
-
-    this.generator = opts.generator;
 
     this.fq = new FixedTimeoutFIFOMappedQueue(this.ttl, (key) => {
       this.#unlink(key).catch((e) => {
@@ -139,37 +145,56 @@ class FileSystemCache {
   }
 
   remove(key: string) {
-    this.fq.delete(sha256(key));
+    return this.fq.delete(sha256(key));
   }
 
-  getSync(key: string): Buffer | null {
+  protected getBufferSync(key: string): Buffer | null {
     const hash = sha256(key);
     this.fq.append(hash);
     try {
       return fs.readFileSync(path.join(this.cachePath, hash));
     } catch (e) {
       if (e.code === `ENOENT`) {
-        return typeof this.generator === `function`
-          ? this.generator(key)
-          : null;
+        return null;
       }
       throw e;
     }
   }
 
-  async get(key: string): Promise<Buffer | null> {
+  protected async getBuffer(key: string): Promise<Buffer | null> {
     const hash = sha256(key);
     this.fq.append(hash);
     try {
       return await fsp.readFile(path.join(this.cachePath, hash));
     } catch (e) {
       if (e.code === `ENOENT`) {
-        return typeof this.generatorAsync === `function`
-          ? this.generatorAsync(key)
-          : null;
+        return null;
       }
       throw e;
     }
+  }
+
+  async clear() {
+    const keys = this.fq.clear();
+    return Promise.all(keys.map((key) => this.#unlink(key)));
+  }
+
+  destroy() {
+    this.fq.destroy();
+  }
+}
+
+class FileSystemCache extends FileSystemCacheBase {
+  constructor(...args: ConstructorParameters<typeof FileSystemCacheBase>) {
+    super(...args);
+  }
+
+  getSync(key: string): Buffer | null {
+    return super.getBufferSync(key);
+  }
+
+  async get(key: string): Promise<Buffer | null> {
+    return super.getBuffer(key);
   }
 
   setSync(key: string, buff: Buffer) {
@@ -183,16 +208,81 @@ class FileSystemCache {
     this.fq.append(sha256(key));
     await fsp.writeFile(path.join(this.cachePath, hash), buff);
   }
+}
 
-  async clear() {
-    const keys = this.fq.clear();
-    return Promise.all(keys.map((key) => this.#unlink(key)));
+class FileSystemCacheDelux<T> extends FileSystemCacheBase {
+  public syncEnabled: boolean;
+
+  public readonly generatorSync: (key: string) => T;
+  public readonly toBufferSync: (value: T) => Buffer;
+  public readonly transformSync: (buff: Buffer) => T;
+
+  public readonly generator: (key: string) => Promise<T> | T;
+  public readonly toBuffer: (value: T) => Promise<Buffer> | Buffer;
+  public readonly transform: (buff: Buffer) => Promise<T> | T;
+
+  constructor(options: Options & Partial<OptionsDelux<T>>) {
+    const opts: Options & Partial<OptionsDelux<T>> = {
+      ...defaultOptions,
+      ...options,
+    };
+
+    super(opts);
+
+    // Assign sync methods to async if they don't exist
+    opts.generator ??= opts.generatorSync;
+    opts.toBuffer ??= opts.toBufferSync;
+    opts.transform ??= opts.transformSync;
+
+    // Check requirements
+    if (!opts.generator) {
+      throw new Error(`generator or generatorSync must be provided`);
+    }
+    if (!opts.toBuffer) {
+      throw new Error(`toBuffer or toBufferSync must be provided`);
+    }
+    if (!opts.transform) {
+      throw new Error(`transform or transformSync must be provided`);
+    }
+
+    this.syncEnabled = !!(
+      opts.generatorSync &&
+      opts.toBufferSync &&
+      opts.transformSync
+    );
   }
 
-  destroy() {
-    this.fq.destroy();
+  async get(key: string): Promise<T> {
+    const res: Buffer | null = await super.getBuffer(key);
+    if (res === null) {
+      const obj = await this.generator(key);
+      (async () => this.toBuffer(obj))()
+        .then((buff) => {
+          FileSystemCache.prototype.set.bind(this)(key, buff);
+        })
+        .catch((e) => {
+          this.error(e);
+        });
+      return obj;
+    }
+    return this.transform(res);
+  }
+
+  getSync(key: string): T {
+    if (!this.syncEnabled)
+      throw new Error(`Sync methods were not implemented. Read the docs`);
+
+    const res: Buffer | null = this.getBufferSync(key);
+
+    if (res === null) {
+      const obj = this.generatorSync(key);
+      FileSystemCache.prototype.setSync.bind(this)(key, this.toBuffer(obj));
+      return obj;
+    } else {
+      return this.transformSync(res);
+    }
   }
 }
 
-export { FileSystemCache };
+export { FileSystemCache, FileSystemCacheDelux };
 export type { Options };

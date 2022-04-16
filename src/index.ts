@@ -1,4 +1,4 @@
-import { FileSystemCache } from "./filecache.js";
+import { FileSystemCache, FileSystemCacheDelux } from "./filecache.js";
 
 export default FileSystemCache;
-export { FileSystemCache };
+export { FileSystemCache, FileSystemCacheDelux };

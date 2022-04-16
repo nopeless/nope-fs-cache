@@ -40,12 +40,6 @@ describe(`main`, function () {
       ttl: 500,
     });
     new FileSystemCache({
-      generator: (key) => Buffer.from(key),
-    });
-    new FileSystemCache({
-      generatorAsync: (key) => Buffer.from(key),
-    });
-    new FileSystemCache({
       error: (e) => console.log(e),
     });
   });
@@ -55,7 +49,7 @@ describe(`main`, function () {
       const key = `test`;
       const value = `test`;
       c.setSync(key, Buffer.from(value));
-      expect(c.getSync(key).toString()).to.equal(value);
+      expect(c.getSync(key).toString())?.to.equal(value);
     });
   });
 
@@ -64,7 +58,7 @@ describe(`main`, function () {
       const key = `test`;
       const value = `test`;
       await c.set(key, Buffer.from(value));
-      expect((await c.get(key)).toString()).to.equal(value);
+      expect((await c.get(key))?.toString()).to.equal(value);
     });
   });
 });
