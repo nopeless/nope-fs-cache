@@ -49,7 +49,7 @@ describe(`main`, function () {
       const key = `test`;
       const value = `test`;
       c.setSync(key, Buffer.from(value));
-      expect(c.getSync(key).toString())?.to.equal(value);
+      expect(c.getSync(key)?.toString()).to.equal(value);
     });
   });
 
