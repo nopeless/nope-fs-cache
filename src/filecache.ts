@@ -18,11 +18,11 @@ function atime(f: string) {
 }
 
 type Options = {
-  readonly basePath?: string;
-  readonly ttl?: number | string;
-  readonly ignoreTTLWarning?: boolean;
-  readonly skipInit?: boolean;
-  error?: (e: Error) => void;
+  readonly basePath: string;
+  readonly ttl: number | string;
+  readonly ignoreTTLWarning: boolean;
+  readonly skipInit: boolean;
+  error: (e: Error) => void;
 };
 
 type OptionsDelux<T> = {
@@ -35,7 +35,7 @@ type OptionsDelux<T> = {
   transform: (buff: Buffer) => Promise<T> | T;
 };
 
-const defaultOptions: Required<Options> = {
+const defaultOptions: Options = {
   basePath: `./cache`,
   ttl: `1d`,
   ignoreTTLWarning: false,
@@ -52,7 +52,7 @@ class FileSystemCacheBase {
   /**
    * If skipInit is true, you must initialize the cache via #initAsync()
    */
-  constructor(options?: Options) {
+  constructor(options?: Partial<Options>) {
     const opts: Required<Options> = {
       ...defaultOptions,
       ...options,
