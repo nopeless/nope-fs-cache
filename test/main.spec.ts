@@ -1,12 +1,10 @@
 import { expect } from "chai";
 import { FileSystemCache } from "../src/index.js";
 import { cacheFile } from "./_init.js";
-// eslint-disable-next-line no-duplicate-imports
-import type Options from "../src/index.js";
 
 function cacheContext(
   executor: (cache: FileSystemCache) => Promise<unknown> | void,
-  opts: Partial<Options> = {}
+  opts: Partial<ConstructorParameters<typeof FileSystemCache>[0]> = {}
 ): Promise<void> | undefined {
   const cache = new FileSystemCache({
     basePath: cacheFile,
