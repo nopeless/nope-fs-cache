@@ -159,9 +159,10 @@ class FileSystemCacheBase {
 
   protected getBufferSync(key: string): Buffer | null {
     const hash = sha256(key);
-    this.fq.append(hash);
     try {
-      return fs.readFileSync(path.join(this.cachePath, hash));
+      const f = fs.readFileSync(path.join(this.cachePath, hash));
+      this.fq.append(hash);
+      return f;
     } catch (e) {
       if (e.code === `ENOENT`) {
         return null;
@@ -172,9 +173,10 @@ class FileSystemCacheBase {
 
   protected async getBuffer(key: string): Promise<Buffer | null> {
     const hash = sha256(key);
-    this.fq.append(hash);
     try {
-      return await fsp.readFile(path.join(this.cachePath, hash));
+      const f = await fsp.readFile(path.join(this.cachePath, hash));
+      this.fq.append(hash);
+      return f;
     } catch (e) {
       if (e.code === `ENOENT`) {
         return null;
