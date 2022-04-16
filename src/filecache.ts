@@ -22,6 +22,7 @@ type Options = {
   readonly ttl: number | string;
   readonly ignoreTTLWarning: boolean;
   readonly skipInit: boolean;
+  warn: (msg: string) => void;
   error: (e: Error) => void;
 };
 
@@ -40,14 +41,16 @@ const defaultOptions: Options = {
   ttl: `1d`,
   ignoreTTLWarning: false,
   skipInit: false,
-  error: console.log,
+  warn: console.warn,
+  error: console.error,
 };
 
 class FileSystemCacheBase {
   public readonly ttl: number;
   public readonly cachePath: string;
   public readonly fq: FixedTimeoutFIFOMappedQueue;
-  public error: typeof console.log;
+  public error: typeof console.error;
+  public warn: typeof console.warn;
 
   /**
    * If skipInit is true, you must initialize the cache via #initAsync()
@@ -87,6 +90,7 @@ class FileSystemCacheBase {
     }
 
     this.error = opts.error;
+    this.warn = opts.warn;
 
     this.fq = new FixedTimeoutFIFOMappedQueue(this.ttl, (key) => {
       this.#unlink(key).catch((e) => {
@@ -96,10 +100,15 @@ class FileSystemCacheBase {
 
     if (!opts.skipInit) {
       // Synchronously initialize
-      fs.existsSync(this.cachePath) || fs.mkdirSync(this.cachePath);
+      fs.existsSync(this.cachePath) ||
+        fs.mkdirSync(this.cachePath, { recursive: true });
 
       const entries: Entries = [];
       for (const filename of fs.readdirSync(this.cachePath)) {
+        if (filename.length !== 64) {
+          console.warn(`Invalid filename: ${filename} in ${this.cachePath}`);
+          continue;
+        }
         entries.push({
           filename,
           atime: atime(path.resolve(this.cachePath, filename)),
@@ -121,7 +130,7 @@ class FileSystemCacheBase {
       dir = await fsp.readdir(this.cachePath);
     } catch (e) {
       if (e.code === `ENOENT`) {
-        await fsp.mkdir(this.cachePath);
+        await fsp.mkdir(this.cachePath, { recursive: true });
       } else {
         throw e;
       }
