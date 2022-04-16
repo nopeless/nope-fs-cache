@@ -77,13 +77,16 @@ class FixedTimeoutFIFOMappedQueue {
     }, this.head.ttlTimestamp - Date.now()).unref();
   }
 
-  delete(key, emitDelete = true) {
+  /**
+   * Return true if the item existed
+   */
+  delete(key, emitDelete = true): boolean {
     const entry = this.entryMap.get(key);
-    if (!entry) return;
+    if (!entry) return false;
 
     if (entry === this.head) {
       this.deleteHead(emitDelete);
-      return;
+      return true;
     }
 
     this.entryMap.delete(key);
@@ -93,12 +96,12 @@ class FixedTimeoutFIFOMappedQueue {
       if (!emitDelete) {
         // Just a moving process
         entry.ttlTimestamp = Date.now() + this.ttl;
-        return;
+        return true;
       }
       this.tail = entry.prev;
       if (!this.tail) throw new InvalidState(`Tail.prev is null`);
       this.tail.next = null;
-      return;
+      return true;
     }
 
     if (!entry.prev) throw new InvalidState(`Entry.prev is null`);
@@ -107,7 +110,7 @@ class FixedTimeoutFIFOMappedQueue {
     entry.next.prev = entry.prev;
     entry.next = null;
     entry.prev = null;
-    return;
+    return true;
   }
 
   *entries() {
