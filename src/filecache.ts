@@ -259,6 +259,25 @@ class FileSystemCacheDelux<T> extends FileSystemCacheBase {
       opts.toBufferSync &&
       opts.transformSync
     );
+
+    this.generator = opts.generator;
+    this.toBuffer = opts.toBuffer;
+    this.transform = opts.transform;
+
+    if (this.syncEnabled) {
+      this.generatorSync = opts.generatorSync as Exclude<
+        typeof opts.generatorSync,
+        undefined
+      >;
+      this.toBufferSync = opts.toBufferSync as Exclude<
+        typeof opts.toBufferSync,
+        undefined
+      >;
+      this.transformSync = opts.transformSync as Exclude<
+        typeof opts.transformSync,
+        undefined
+      >;
+    }
   }
 
   async get(key: string): Promise<T> {
