@@ -9,26 +9,17 @@ class InvalidState extends Error {
 }
 
 class FixedTimeoutFIFOMappedQueue {
-  public head: Data | null;
-  public tail: Data | null;
-  public timer: ReturnType<typeof setTimeout> | null;
-  public entryMap: Map<Key, Data>;
+  public head: Data | null = null;
+  public tail: Data | null = null;
+  public timer: ReturnType<typeof setTimeout> | null = null;
+  public entryMap: Map<Key, Data> = new Map();
 
   constructor(
     public ttl: number,
     public onDelete: (_: string) => void = () => {
       return;
     }
-  ) {
-    this.ttl = ttl;
-    this.onDelete = onDelete;
-
-    this.head = null;
-    this.tail = null;
-
-    this.timer = null;
-    this.entryMap = new Map();
-  }
+  ) {}
 
   append(key, timestamp: number | null = null) {
     this.delete(key, false);
@@ -164,14 +155,9 @@ class FixedTimeoutFIFOMappedQueue {
 }
 
 class Data {
-  public prev: Data | null;
-  public next: Data | null;
-  constructor(public key: Key, public ttlTimestamp: number) {
-    this.key = key;
-    this.ttlTimestamp = ttlTimestamp;
-    this.prev = null;
-    this.next = null;
-  }
+  public prev: Data | null = null;
+  public next: Data | null = null;
+  constructor(public key: Key, public ttlTimestamp: number) {}
 
   toString() {
     return `[${this.key} prev=${this.prev && this.prev.key} next=${
