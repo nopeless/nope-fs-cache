@@ -22,7 +22,7 @@ type Options = {
   readonly ttl?: number | string;
   readonly ignoreTTLWarning?: boolean;
   readonly skipInit?: boolean;
-  error?: typeof console.log;
+  error?: (e: Error) => void;
 };
 
 type OptionsDelux<T> = {
