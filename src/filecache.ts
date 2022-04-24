@@ -101,7 +101,13 @@ class FileSystemCacheBase {
 
     this.fq = new FixedTimeoutFIFOMappedQueue(this.ttl, (key) => {
       this.#unlink(key).catch((e) => {
-        this.error(e);
+        if (e.code === `ENOENT`) {
+          this.warn(
+            `Attempted to remove key ${key} from folder however it was not found. If you manually deleted this file, ignore this message. If not, please report this bug`
+          );
+        } else {
+          this.error(e);
+        }
       });
     });
 
