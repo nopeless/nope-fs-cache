@@ -59,4 +59,16 @@ describe(`main`, function () {
       expect((await c.get(key))?.toString()).to.equal(value);
     });
   });
+
+  it(`(Sync) Should properly delete file after ttl`, async function () {
+    await cacheContext(
+      async (c) => {
+        const key = `test`;
+        const value = `test`;
+        await c.set(key, Buffer.from(value));
+        expect((await c.get(key))?.toString()).to.equal(value);
+      },
+      { ignoreTTLWarning: true, ttl: 10 }
+    );
+  });
 });
