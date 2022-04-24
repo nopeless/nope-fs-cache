@@ -53,6 +53,13 @@ class FileSystemCacheBase {
   public warn: typeof console.warn;
 
   /**
+   * This cache is very short lived. It provides a buffer
+   * while the file is being written to the disk
+   **/
+  protected readonly bufferMemoryReferenceCache: { [key: string]: Buffer } =
+    Object.create(null);
+
+  /**
    * If skipInit is true, you must initialize the cache via #initAsync()
    */
   constructor(options?: Partial<Options>) {
@@ -174,7 +181,9 @@ class FileSystemCacheBase {
   protected async getBuffer(key: string): Promise<Buffer | null> {
     const hash = sha256(key);
     try {
-      const f = await fsp.readFile(path.join(this.cachePath, hash));
+      const f =
+        this.bufferMemoryReferenceCache[key] ??
+        (await fsp.readFile(path.join(this.cachePath, hash)));
       this.fq.append(hash);
       return f;
     } catch (e) {
@@ -217,7 +226,13 @@ class FileSystemCache extends FileSystemCacheBase {
   async set(key: string, buff: Buffer) {
     const hash = sha256(key);
     this.fq.append(sha256(key));
-    await fsp.writeFile(path.join(this.cachePath, hash), buff);
+    if (this.bufferMemoryReferenceCache[key]) {
+      return;
+    }
+    this.bufferMemoryReferenceCache[key] = buff;
+    await fsp.writeFile(path.join(this.cachePath, hash), buff).finally(() => {
+      delete this.bufferMemoryReferenceCache[key];
+    });
   }
 }
 
