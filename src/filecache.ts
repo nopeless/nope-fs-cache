@@ -100,7 +100,7 @@ class FileSystemCacheBase {
     this.warn = opts.warn;
 
     this.fq = new FixedTimeoutFIFOMappedQueue(this.ttl, (key) => {
-      this.#unlink(key).catch((e) => {
+      fsp.unlink(key).catch((e) => {
         if (e.code === `ENOENT`) {
           this.warn(
             `Attempted to remove key ${key} from folder however it was not found. If you manually deleted this file, ignore this message. If not, please report this bug`
