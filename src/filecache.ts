@@ -253,7 +253,7 @@ class FileSystemCacheDelux<T> extends FileSystemCacheBase {
   public readonly toBuffer: (value: T) => Promise<Buffer> | Buffer;
   public readonly transform: (buff: Buffer) => Promise<T> | T;
 
-  constructor(options: Options & Partial<OptionsDelux<T>>) {
+  constructor(options: Partial<Options & OptionsDelux<T>>) {
     const opts: Options & Partial<OptionsDelux<T>> = {
       ...defaultOptions,
       ...options,
