@@ -103,7 +103,7 @@ class FileSystemCacheBase {
       fsp.unlink(key).catch((e) => {
         if (e.code === `ENOENT`) {
           this.warn(
-            `Attempted to remove key ${key} from folder however it was not found. If you manually deleted this file, ignore this message. If not, please report this bug`
+            `Attempted to remove key ${key} at ${this.cachePath} however it was not found. If you manually deleted this file, ignore this message. If not, please report this bug`
           );
         } else {
           this.error(e);
@@ -163,7 +163,7 @@ class FileSystemCacheBase {
   }
 
   remove(key: string) {
-    return this.fq.delete(sha256(key));
+    return this.fq.delete(sha256(key), true);
   }
 
   protected getBufferSync(key: string): Buffer | null {
@@ -196,9 +196,17 @@ class FileSystemCacheBase {
     }
   }
 
+  protected async fspUnlink(hash: string) {
+    return fsp.unlink(path.join(this.cachePath, hash));
+  }
+
+  protected fsUnlink(hash: string) {
+    return fs.unlinkSync(path.join(this.cachePath, hash));
+  }
+
   async clear() {
     const keys = this.fq.clear();
-    return Promise.all(keys.map((key) => fsp.unlink(key)));
+    return Promise.all(keys.map((key) => this.fspUnlink(key)));
   }
 
   async clearSync() {

@@ -1,7 +1,5 @@
 /* eslint-disable no-use-before-define */
 
-type Key = string;
-
 class InvalidState extends Error {
   constructor(...args) {
     super(...args);
@@ -12,7 +10,7 @@ class FixedTimeoutFIFOMappedQueue {
   public head: Data | null = null;
   public tail: Data | null = null;
   public timer: ReturnType<typeof setTimeout> | null = null;
-  public entryMap: Map<Key, Data> = new Map();
+  public entryMap: Map<string, Data> = new Map();
 
   constructor(
     public ttl: number,
@@ -21,7 +19,7 @@ class FixedTimeoutFIFOMappedQueue {
     }
   ) {}
 
-  append(key, timestamp: number | null = null) {
+  append(key: string, timestamp: number | null = null) {
     this.delete(key, false);
     const entry = new Data(key, timestamp || Date.now() + this.ttl);
     this.entryMap.set(key, entry);
@@ -71,7 +69,7 @@ class FixedTimeoutFIFOMappedQueue {
   /**
    * Return true if the item existed
    */
-  delete(key, emitDelete = true): boolean {
+  delete(key: string, emitDelete: boolean): boolean {
     const entry = this.entryMap.get(key);
     if (!entry) return false;
 
@@ -157,7 +155,7 @@ class FixedTimeoutFIFOMappedQueue {
 class Data {
   public prev: Data | null = null;
   public next: Data | null = null;
-  constructor(public key: Key, public ttlTimestamp: number) {}
+  constructor(public key: string, public ttlTimestamp: number) {}
 
   toString() {
     return `[${this.key} prev=${this.prev && this.prev.key} next=${
