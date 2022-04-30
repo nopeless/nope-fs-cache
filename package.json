@@ -9,7 +9,7 @@
     "test:coverage": "c8 npm run test",
     "test:html": "c8 --reporter=html npm run test && echo 'Opening index.html...' && (open-cli coverage/index.html || echo 'could not open coverage/index.html')",
     "lint": "eslint .",
-    "prepublish": "npm run lint && tsc"
+    "beforepublish": "npm run lint && tsc"
   },
   "repository": {
     "type": "git",
