@@ -23,23 +23,23 @@ function cacheContext(
 
 describe(`main`, function () {
   it(`Constructor calls`, function () {
-    new FileSystemCache();
+    new FileSystemCache().destroy();
     new FileSystemCache({
       basePath: cacheFile,
-    });
+    }).destroy();
     new FileSystemCache({
       ttl: 1000,
-    });
+    }).destroy();
     new FileSystemCache({
       ttl: `5d`,
-    });
+    }).destroy();
     new FileSystemCache({
       ignoreTTLWarning: true,
       ttl: 500,
-    });
+    }).destroy();
     new FileSystemCache({
       error: (e) => console.log(e),
-    });
+    }).destroy();
   });
 
   it(`(Sync) Should store a cache file`, function () {
