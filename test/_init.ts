@@ -1,7 +1,7 @@
 import path from "path";
 import rimraf from "rimraf";
 
-const CACHE_DIR = path.resolve(process.cwd(), `.cache`);
+const CACHE_DIR = path.resolve(process.cwd(), `cache`);
 
 function clean() {
   rimraf.sync(CACHE_DIR);
