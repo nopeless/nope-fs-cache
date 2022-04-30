@@ -162,10 +162,6 @@ class FileSystemCacheBase {
     }
   }
 
-  async #unlink(key: string) {
-    return fsp.unlink(path.join(this.cachePath, key));
-  }
-
   remove(key: string) {
     return this.fq.delete(sha256(key));
   }
@@ -202,7 +198,12 @@ class FileSystemCacheBase {
 
   async clear() {
     const keys = this.fq.clear();
-    return Promise.all(keys.map((key) => this.#unlink(key)));
+    return Promise.all(keys.map((key) => fsp.unlink(key)));
+  }
+
+  async clearSync() {
+    const keys = this.fq.clear();
+    return keys.map((key) => fs.unlinkSync(key));
   }
 
   destroy() {
