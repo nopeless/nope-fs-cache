@@ -101,7 +101,6 @@ class FileSystemCacheBase {
 
     this.fq = new FixedTimeoutFIFOMappedQueue(this.ttl, (hash) => {
       this.fspUnlink(hash).catch((e) => {
-        console.log(e);
         if (e.code === `ENOENT`) {
           this.warn(
             `Attempted to remove key ${hash} at ${this.cachePath} however it was not found. If you manually deleted this file, ignore this message. If not, please report this bug`
@@ -131,7 +130,6 @@ class FileSystemCacheBase {
       entries.sort((a, b) => b.atime - a.atime);
 
       for (const entry of entries) {
-        console.log(entry.filename);
         this.fq.append(entry.filename, entry.atime + this.ttl);
       }
     }

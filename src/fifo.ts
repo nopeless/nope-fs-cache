@@ -17,11 +17,19 @@ class FixedTimeoutFIFOMappedQueue {
     public onDelete: (_: string) => void = () => {
       return;
     }
-  ) {}
+  ) {
+    if (ttl < 0) throw new Error(`ttl cannot be negative`);
+  }
 
-  append(key: string, timestamp: number | null = null) {
+  append(key: string, timestamp: number | null = null): void {
+    if (timestamp) {
+      if (timestamp < Date.now()) return void this.delete(key, true);
+    } else {
+      timestamp = Date.now() + this.ttl;
+    }
+
     this.delete(key, false);
-    const entry = new Data(key, timestamp || Date.now() + this.ttl);
+    const entry = new Data(key, timestamp);
     this.entryMap.set(key, entry);
 
     if (!this.head) {
@@ -147,7 +155,8 @@ class FixedTimeoutFIFOMappedQueue {
 
   debug() {
     console.log(
-      [...this.entries()].map((entry) => entry.toString()).join(`->`)
+      [...this.entries()].map((entry) => entry.toString()).join(`->`) ||
+        `[empty]`
     );
   }
 }
