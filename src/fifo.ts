@@ -23,7 +23,7 @@ class FixedTimeoutFIFOMappedQueue {
 
   append(key: string, timestamp: number | null = null): void {
     if (timestamp) {
-      if (timestamp < Date.now()) return void this.delete(key, true);
+      if (timestamp < Date.now()) return void this.onDelete(key);
     } else {
       timestamp = Date.now() + this.ttl;
     }
