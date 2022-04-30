@@ -99,11 +99,12 @@ class FileSystemCacheBase {
     this.error = opts.error;
     this.warn = opts.warn;
 
-    this.fq = new FixedTimeoutFIFOMappedQueue(this.ttl, (key) => {
-      fsp.unlink(key).catch((e) => {
+    this.fq = new FixedTimeoutFIFOMappedQueue(this.ttl, (hash) => {
+      this.fspUnlink(hash).catch((e) => {
+        console.log(e);
         if (e.code === `ENOENT`) {
           this.warn(
-            `Attempted to remove key ${key} at ${this.cachePath} however it was not found. If you manually deleted this file, ignore this message. If not, please report this bug`
+            `Attempted to remove key ${hash} at ${this.cachePath} however it was not found. If you manually deleted this file, ignore this message. If not, please report this bug`
           );
         } else {
           this.error(e);
@@ -130,6 +131,7 @@ class FileSystemCacheBase {
       entries.sort((a, b) => b.atime - a.atime);
 
       for (const entry of entries) {
+        console.log(entry.filename);
         this.fq.append(entry.filename, entry.atime + this.ttl);
       }
     }
